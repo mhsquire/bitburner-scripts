@@ -1,0 +1,66 @@
+import * as config from "config.script";
+
+// This script sends purchase orders to a stock watchdog script.
+
+var stocks = stock.getSymbols();
+var forecastThrhd = .6;
+var volitilityThrhd = .005
+var brokerFee = 100000;
+
+var minMoney = 50 * 10 ^ 9;
+// shares = Math.floor(getServerMoneyAvailable("home") * 0.01 / price);
+// ***conditions to trade***
+// 1. Money exists beyond 50 billion
+// 2. Memory exists to generate scripts
+// 3. 
+
+// Features:
+// 1. stops at stock index i when memory does not exist. Not yet Implemented.
+// 2. sorts stocks such that high forecast is prefered. Not yet implemented.
+
+function stockIsGood(stk) {
+
+	forecast = stock.getForecast(stk);
+	if (forecast > forecastThrhd) {
+		volitility = stock.getVolatility(stk);
+		if (volitility > volitilityThrhd) {
+			initial_price = stock.getAskPrice(stk);
+			profit = initial_price * (1 + volitility) ^ 10;
+			loss = initial_price * (1 - volitility) ^ 9;
+			share_limit = Math.floor(getServerMoneyAvailable("home") * 0.01 / initial_price);
+			max_shares = stock.getMaxShares(stk);
+			if (max_shares < share_limit) share_limit = max_shares;
+			var profitThrhd = 10 * brokerFee * (1 + volitility) ^ 6;
+			if (profitThrhd < profit) {
+				var expectedProfit = profit * share_limit - brokerFee * 2;
+				if (expectedProfit > profitThrhd) {
+					return [true, share_limit, profit, loss];
+				}
+			}
+		}
+	}
+	return [false];
+}
+
+function serverIsGood(server) {
+	if (getServerMoneyAvailable("home") > minMoney) {
+		freeRam = getServerMaxRam(server) - getServerUsedRam(server);
+		if (freeRam > getScriptRam(config.stockDog(), server)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+while (true) {
+	for (i = 0; i < stocks.length; i++) {
+		stk = stocks[i];
+		if (serverIsGood("home")) {
+			stkGood = stockIsGood(stk);
+			if (stkGood[0]) {
+				threads = 1;
+				run(config.stockDog(), threads, stk, shares = stkGood[1], profit = stkGood[2], loss = stkGood[3]);
+			}
+		}
+	}
+}

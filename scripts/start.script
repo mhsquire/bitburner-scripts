@@ -1,0 +1,53 @@
+/* Quick startup script for convenience. */
+
+help = "\nThis is a script that starts, stops, and restarts services. \nCommand arguments are start.script <action> . \nActions are (start, stop, restart)."
+
+import * as config from "config.script";
+
+function runScript(script) {
+	if (isRunning(script)) {
+		tprint("Script: " + script + "running already.");
+	} else {
+		tprint("Starting " + script);
+		run(script);
+	}
+}
+
+function warmStart() {
+	runScript(config.purchaser());
+	runScript(config.scanner());
+	runScript(config.hacker());
+}
+
+function startScripts() {
+	runScript(config.purchaser());
+	runScript(config.scanner());
+	runScript(config.hacker());
+	runScript(config.healthChk());
+}
+
+function stopScripts() {
+	scripts = ps("home");
+	scripts.forEach(function (script) {
+		if (script != "start.script") {
+			scriptKill(script, "home");
+		}
+	});
+	tprint("All scripts stopped.");
+}
+
+function restartScripts() {
+	stopScripts();
+	startScripts();
+	tprint("Restarted!")
+}
+
+if (args[0] == "start") {
+	startScripts();
+} else if (args[0] == "restart") {
+	restartScripts();
+} else if (args[0] == "stop") {
+	stopScripts();
+} else {
+	tprint(help)
+}

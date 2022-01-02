@@ -1,0 +1,37 @@
+import * as config from "config.script";
+
+startingServer = 0;
+if (fileExists(config.target_list())) {
+    allServers = read(config.target_list()).split(',');
+} else {
+    allServers = scan("home");
+}
+home = ["home"]
+purchased_servers = getPurchasedServers()
+
+
+while (true) {
+    servers = allServers;
+    // when we reach the last server, start it all over
+    if (startingServer == allServers.length) startingServer = 0;
+    for (server = startingServer; server < servers.length; server++) {
+        // you can change this part to perform whatever you want to servers[server]
+        print("scanning: " + servers[server])
+        // end of servers[server] proccessing
+        // scans more servers from the current server
+        newServers = scan(servers[server]);
+        for (newServer = 0; newServer < newServers.length; newServer++) {
+            isNewServer = true;
+            // we don't want home server or a server which is already in the list
+            for (checkServer = 0; checkServer < allServers.length; checkServer++) {
+                if (newServers[newServer] == 'home' || purchased_servers.includes(newServers[newServer]) || newServers[newServer] == allServers[checkServer]) {
+                    isNewServer = false;
+                }
+            }
+            if (isNewServer) allServers = allServers.concat(newServers[newServer]);
+        }
+    }
+    write(config.target_list(), allServers, "w");
+    // next loop should start from the server we just scanned
+    startingServer = server;
+}

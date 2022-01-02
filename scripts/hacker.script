@@ -1,0 +1,82 @@
+debug = false
+
+if (debug == false) {
+	disableLog("getServerMaxMoney");
+	disableLog("getServerMinSecurityLevel");
+	disableLog("sleep")
+	disableLog("getServerMoneyAvailable")
+	disableLog("exec")
+}
+// This script 
+// 0. Reads corps list
+// 1. Nukes corps
+// 2. updates pwned list
+import * as config from "config.script";
+import * as findCorps from "findCorps.script";
+
+function openPorts(target) {
+	ports_opened = 0;
+	if (fileExists("BruteSSH.exe")) {
+		brutessh(target);
+		ports_opened++;
+	}
+	if (fileExists("FTPCrack.exe")) {
+		ftpcrack(target);
+		ports_opened++;
+	}
+	if (fileExists("relaySMTP.exe")) {
+		relaysmtp(target);
+		ports_opened++;
+	}
+	if (fileExists("HTTPWorm.exe")) {
+		httpworm(target);
+		ports_opened++;
+	}
+	if (fileExists("SQLInject.exe")) {
+		sqlinject(target);
+		ports_opened++;
+	}
+	return ports_opened;
+}
+
+function nukeCorp(corp) {
+	if (hasRootAccess(corp) == false) {
+		if (getServerRequiredHackingLevel(corp) <= getHackingLevel()) {
+			var ports = 0
+			ports = openPorts(corp);
+			if (getServerNumPortsRequired(corp) <= ports) {
+				// Get root access to target server
+				nuke(corp)
+			}
+		}
+	}
+}
+
+function writePwned(targets) {
+	write(config.pwned_list(), targets.toString(), "w");
+	run(config.publisher())
+}
+
+var the_pwned = [];
+curr_time = Date.now()
+while (true) {
+	corps = findCorps.findCorps();
+	print("Starting hack attacks!")
+	publish = false
+	corps.forEach(function (corp) {
+		if (!the_pwned.includes(corp)) {
+			nukeCorp(corp)
+			if (hasRootAccess(corp)) {
+				the_pwned.push(corp)
+				publish = true;
+			}
+		}
+	});
+	if (publish) {
+		writePwned(the_pwned);
+		run(config.publisher())
+	}
+	print("Hack attacks done.")
+
+	sleep(config.nuke_timer())
+}

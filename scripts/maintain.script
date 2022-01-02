@@ -1,0 +1,12 @@
+import * as config from "config.script";
+
+// update script using getscriptname comparison
+
+function maintain(hostname, percentage) {
+	threads = Math.floor(getServerMaxRam(hostname) * percentage / getScriptRam(config.payload()));
+	if (threads != 0) {
+		scp(config.payload(), hostname);
+		kill(config.payload(), hostname);
+		exec(config.payload(), hostname, threads);
+	}
+}

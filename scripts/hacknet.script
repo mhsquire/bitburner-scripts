@@ -1,0 +1,27 @@
+while (true) {
+	last = hacknet.numNodes() - 1;
+	if (last == -1) { 
+		hacknet.purchaseNode();
+		continue;
+	}
+	print(last);
+	stats = hacknet.getNodeStats(last);
+	print(stats);
+	if (stats.cores >= 16) {
+		if (stats.ram >= 64) {
+			if (stats.level >= 200) {
+				hacknet.purchaseNode();
+			} else {
+				hacknet.upgradeLevel(last, 1);
+			}
+		} else {
+			// purchase ram
+			ram = stats.ram^.5;
+			ram++;
+			hacknet.upgradeRam(last, ram)
+		}
+	} else {
+		// purchase cores
+		hacknet.upgradeCore(last);
+	}
+}

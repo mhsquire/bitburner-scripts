@@ -1,0 +1,52 @@
+// This script recieves a buy order and watches the order for a profit or loss.
+
+var sym = args[0];
+var shares = args[1];
+var profitThhd = args[2];
+var stopLoss = args[3];
+
+
+var minHoldTime = 30;
+var hold = true;
+var totalHoldings = stock.buy(sym, shares);
+var init_price = stock.getAskPrice(sym);
+var profitsRealized = 0;
+
+function calcProfits(payout, ratio) {
+	return profitsRealized + payout * (1 - ratio)
+}
+
+i = i
+
+function takeProfit(curr_price) {
+	if (i = 20){
+		sellStock();
+	}
+	cullShares = Math.floor(shares * 0.1);
+	shares = shares - cullShares;
+	payout = stock.sell(sym, cullShares);
+	ratio = curr_price / init_price;
+	profitsRealized = calcProfits(payout, ratio);
+	volitility = stock.getVolatility(sym)
+	stopLoss = stopLoss * (1 + volitility) ^ i;
+	profitThhd = profitThhd * (1 + volitility) ^ i;
+	i++;
+}
+
+function sellStock() {
+	profitsRealized = profitsRealized + stock.sell(sym, shares);
+	print("Script sold out at profit of " + profitsRealized);
+	hold = false;
+}
+
+while (hold) {
+	var volitility = stock.getVolatility(sym);
+	var forecast = stock.getForecast(sym);
+	var curr_price = stock.getBidPrice(sym);
+	print("Profit = " + profitsRealized);
+	if (curr_price >= profitThhd) {
+		takeProfit(curr_price, volitility);
+	} else if (curr_price <= stopLoss) {
+		sellStock();
+	}
+}

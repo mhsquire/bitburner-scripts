@@ -1,0 +1,20 @@
+import * as config from "config.script";
+import * as findCorps from "findCorps.script";
+
+file = config.pwned_list();
+targets = []
+if (fileExists(file)) {
+	new_targets = read(file);
+	if (targets != new_targets) {
+		//update servers
+		targets = new_targets;
+		getPurchasedServers().forEach(function (server) {
+			scp(file, "home", server);
+		});
+		corps = findCorps.findCorps();
+		corps.forEach(function (server) {
+			scp(file, "home", server);
+		});
+
+	}
+}

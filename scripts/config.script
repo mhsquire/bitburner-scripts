@@ -1,0 +1,64 @@
+/*  
+	This is the master config file for script getters.
+	It is meant to aid quick updates of the system.
+*/
+
+// Getters for scripts
+
+function healthChk() {
+	return "healthchk.script"
+}
+
+function stockDog() {
+	return "stock1.0.script";
+}
+
+function purchaser() {
+	return "purchase.script";
+}
+
+function hacker() {
+	return "hack.script";
+}
+
+function payload() {
+	return "payload1.0.script";
+}
+
+function payloader() {
+	return "payloader.script";
+}
+
+function scanner() {
+	return "scan.script";
+}
+
+function publisher() {
+	return "publish.script";
+}
+
+function maintenance() {
+	return "maintain.script"
+}
+
+// getters for important data files.
+
+function pwned_list() {
+	return "pwned.txt"
+}
+
+function target_list() {
+	return "corps.txt"
+}
+
+// important variables
+
+function nuke_timer() {
+	seconds = 600;
+	return seconds * 1000;
+}
+
+function money_timer() {
+	seconds = 3600;
+	return seconds * 1000;
+}

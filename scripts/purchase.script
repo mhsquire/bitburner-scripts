@@ -1,0 +1,90 @@
+// How much RAM each purchased server will have. In this case, it'll
+// be 8GB.
+debug = false;
+if (!debug) {
+	disableLog("getPurchasedServerMaxRam");
+	disableLog("getServerMoneyAvailable");
+	disableLog("getPurchasedServerCost");
+	disableLog("getServerMaxRam");
+}
+import * as config from "config.script";
+
+var script_size = getScriptRam(config.payload())
+var start_ram = 4
+
+// Continuously try to purchase servers until we've reached the maximum
+// amount of servers. Update them as needed.
+// Raise (ram) limit to produce 25 servers of largest RAM
+
+function findRam(ram) {
+	if (ram > getPurchasedServerMaxRam()) {
+
+		return getPurchasedServerMaxRam();
+	} else if (getServerMoneyAvailable("home") > getPurchasedServerCost(ram) * getPurchasedServerLimit()) {
+		return findRam(ram * 2);
+	}
+	return ram;
+}
+
+function upgradeServer(server, ram) {
+	if (getPurchasedServerCost(ram) < getServerMoneyAvailable("home")) {
+		if (serverExists(server)) {
+			print("Found server.")
+			killall(server)
+			deleteServer(server)
+			print("Delorted!")
+		}
+	}
+
+	purchaseServer(server, ram) // Todo: Nice to have ram in server name
+	scp(config.payload(), server)
+	threads = Math.floor(ram / script_size)
+	return exec(config.payload(), server, threads)
+
+}
+
+function purchaseNewServer(ram) {
+	if (getPurchasedServerCost(ram) < getServerMoneyAvailable("home")) {
+		print("Upgrade will be a new server.")
+		id = 0
+		while (serverExists("pserv-" + id)) {
+			id++
+		}
+		return upgradeServer("pserv-" + id, ram)
+	}
+}
+
+while (true) {
+	if (getPurchasedServers().length < getPurchasedServerLimit()) {
+		pid = purchaseNewServer(findRam(start_ram));
+		if (pid == 0) {
+			print("----------------");
+			print("Purchase failure!");
+			print("----------------");
+		} else if (pid >= 0) {
+			print(pid + " Success!");
+		} else {
+
+		}
+		continue;
+	}
+
+	getPurchasedServers().forEach(function (a_server) {
+
+		ram = getServerMaxRam(a_server)
+		new_ram = findRam(ram)
+		if (new_ram > ram) {
+			print("Server: " + a_server)
+
+			print("Current RAM = " + ram + ".")
+			print("Target RAM = " + new_ram + ".")
+			print("Cost of replacement = " + getPurchasedServerCost(new_ram) + ".");
+
+			// Check if we have enough money to upgrade / purchase a server
+			if (getServerMoneyAvailable("home") > getPurchasedServerCost(new_ram)) {
+				upgradeServer(a_server, new_ram);
+			}
+		}
+	})
+	sleep(config.money_timer())
+}
