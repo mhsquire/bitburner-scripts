@@ -1,0 +1,51 @@
+import * as config from "config.script";
+
+
+function maintain(hostname, percentage) {
+	/*  This function adds payload to a host.
+	 */
+	threads = Math.floor(getServerMaxRam(hostname) * percentage / getScriptRam(config.payload()));
+	if (threads != 0) {
+		scp(config.payload(), hostname);
+		kill(config.payload(), hostname);
+		exec(config.payload(), hostname, threads);
+	}
+}
+
+function findCorps() {
+	/* returns a list from either the 
+	default or from the scanner's corps file. */
+	var default_corps = ["foodnstuff", "iron-gym", "n00dles", "hong-fang-tea", "sigma-cosmetics", "harakiri-sushi", "joesguns"];
+
+	if (fileExists(config.target_list())) {
+		return read(config.target_list()).split(',');
+	} else {
+		return default_corps;
+	}
+}
+
+function findTargets() {
+	/* returns a list from either the 
+	default or from the scanner's corps file. */
+	var default_corps = ["foodnstuff", "iron-gym", "n00dles", "hong-fang-tea", "sigma-cosmetics", "harakiri-sushi", "joesguns"];
+
+	if (fileExists(config.pwned_list())) {
+		return read(config.pwned_list()).split(',');
+	} else {
+		return default_corps;
+	}
+}
+
+function readPwned(targets) {
+	// This function takes as input a target list 
+	// and compares against a supposedly new target list.
+	// it then returns the either the new list updated list or old list.
+	if (fileExists(config.pwned_list())) {
+		new_targets = read(config.pwned_list()).split(",");
+		// TODO check this for payloader issues.
+		if (targets != new_targets) {
+			targets = new_targets;
+		}
+	}
+	return targets;
+}

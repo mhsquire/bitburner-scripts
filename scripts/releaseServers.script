@@ -1,0 +1,19 @@
+import * as lib from "library.script";
+import * as config from "config.script";
+
+
+tprint("scrubbing servers");
+
+var servers = lib.findTargets();
+
+servers.forEach(function(a_server) {
+	success = "success!"
+	killall(a_server)
+	files = ls(a_server)
+	files.forEach(function(file) {
+		if(!rm(file, a_server)) {
+			success = "failed!"
+		}
+	})
+	tprint(a_server + " " + success)
+});

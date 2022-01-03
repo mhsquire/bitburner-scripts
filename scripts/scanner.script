@@ -9,6 +9,16 @@ if (fileExists(config.target_list())) {
 home = ["home"]
 purchased_servers = getPurchasedServers()
 
+function chkForOldServer() {
+    if (newServers[newServer] == 'home') {
+        if (purchased_servers.includes(newServers[newServer])) {
+            if (newServers[newServer] == allServers[checkServer]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 while (true) {
     servers = allServers;
@@ -21,15 +31,13 @@ while (true) {
         // scans more servers from the current server
         newServers = scan(servers[server]);
         for (newServer = 0; newServer < newServers.length; newServer++) {
-            isNewServer = true;
+            isOldServer = false;
             // we don't want home server or a server which is already in the list
             for (checkServer = 0; checkServer < allServers.length; checkServer++) {
-                if (newServers[newServer] == 'home' || purchased_servers.includes(newServers[newServer]) || newServers[newServer] == allServers[checkServer]) {
-                    isNewServer = false;
-                }
+                isOldServer = chkForOldServer();
             }
-            if (isNewServer) allServers = allServers.concat(newServers[newServer]);
         }
+        if (!isOldServer) allServers = allServers.concat(newServers[newServer]);
     }
     write(config.target_list(), allServers, "w");
     // next loop should start from the server we just scanned

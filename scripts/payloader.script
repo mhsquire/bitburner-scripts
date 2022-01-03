@@ -1,0 +1,200 @@
+import * as config from "config.script";
+import * as lib from "library.script";
+
+function statusCode(status) {
+	if (status == "idle") {
+		return 0;
+	} else if (status == "weakening") {
+		return 1;
+	} else if (status == "growing") {
+		return 2;
+	} else if (status == "hacking") {
+		return 3;
+	}
+}
+
+function calcThreads() {
+	return 1;
+}
+
+function setNewTask(target, box) {
+	target.box = box;
+	tprint("box " + box);
+	if (target.box != "") {
+		if (target.moneyCurr < target.moneyMax * 0.9) {
+			new_status = statusCode("growing");
+			new_time = getGrowTime(target.name);
+		} else if (getServerMinSecurityLevel(target.name) + 5 < getServerSecurityLevel(target.name)) {
+			new_status = statusCode("weakening");
+			new_time = getWeakenTime(target.name);
+		} else {
+			new_status = statusCode("hacking");
+			new_time = getHackTime(target.name);
+		}
+		threads = calcThreads();
+		tprint(target.box.name);
+		pid = exec(config.payload1(), target.box.name, threads, target.name, target.status);
+		if (pid != 0) {
+			target.status = new_status;
+			target.time = Date.now() + new_time;
+		} else {
+			target.status = statusCode("idle");
+			target.time = Date.now();
+		}
+		return pid;
+	}
+}
+
+function sortTargets(servers) {
+	return servers.sort(function (a, b) {
+		if (a.time < b.time) {
+			return 1;
+		} else if (a.time > b.time) {
+			return -1;
+		} else if (a.time === b.time) {
+			if (a.status <= b.status) {
+				return 1;
+			} else if (a.status > b.status) {
+				return -1;
+			}
+		}
+	})
+}
+
+function findNewHost(boxen) {
+	if (boxen.length >= 1) {
+		box = boxen.shift();
+		if (box.freeRam >= getScriptRam(config.payload1())) {
+			boxen.push(box);
+			return box;
+		}
+	}
+	return "";
+}
+
+function updateTargets(targets, boxen) {
+	targets.forEach(function (target) {
+		if (target.time < Date.now()) {
+			// time expired
+			old_box = target.box;
+			box = findNewHost(boxen);
+			if (box != "") {
+				setNewTask(target, box);
+			}
+			if (old_box != "") {
+				boxen.push(old_box);
+			}
+		}
+	})
+	return targets;
+}
+
+function sortBoxen(boxen) {
+	return boxen.sort(function (a, b) {
+		if (a.freeRam > b.freeRam) {
+			return 1;
+		} else if (a.freeRam > b.freeRam) {
+			return -1;
+		} else if (a.freeRam === b.freeRam) {
+			if (a.name <= b.name) {
+				return 1;
+			} else if (a.name > b.name) {
+				return -1;
+			}
+		}
+	})
+}
+
+function updateBoxen(boxen) {
+	targets.forEach(function (target) {
+		if (target.time < Date.now()) {
+			// time expired
+			box = findNewHost(boxen);
+			setNewTask(target, box);
+		}
+	})
+	return targets;
+}
+
+function removeDups(servers, server_names) {
+	servers.forEach(function (server) {
+		pos = server_names.indexOf(server.name);
+		dups = server_names.splice(pos, 1);
+		// tprint("dups = " + dups);
+		// tprint("server names = " + server_names);
+	})
+	return server_names;
+}
+
+function addNewTargets(targets) {
+	targets_names = [];
+	targets_names = lib.readPwned(targets);
+	if (targets_names.length > targets.length) {
+		targets_names = removeDups(targets, targets_names);
+		targets_names.forEach(function (name) {
+			// create server object and add to list
+			if (getServerMaxMoney(name) > 0) {
+				var new_target = {
+					"name": name,
+					"moneyMax": getServerMaxMoney(name),
+					"moneyCurr": getServerMoneyAvailable(name),
+					"securityMin": getServerMinSecurityLevel(name),
+					"securityCurr": getServerSecurityLevel(name),
+					"status": statusCode("idle"), // 0: "idle", 1: "weakening", 2: "growing", 3: "hacking"
+					"time": Date.now(),
+					"box": "", // boxen that it's running on.
+				}
+				targets.push(new_target);
+			}
+		});
+	}
+
+	// targets.forEach(function (target) {
+	// 	tprint(target.name);
+	// })
+	return targets;
+}
+
+function addNewBoxen(boxen) {
+	boxen_names = lib.readPwned(boxen);
+	if (boxen_names.length > boxen.length) {
+		boxen_names = removeDups(boxen, boxen_names);
+		boxen_names.forEach(function (name) {
+			var box = {
+				"name": name,
+				"freeRam": getServerMaxRam(name) - getServerUsedRam(name),
+			}
+			boxen.push(box);
+		})
+	}
+	// boxen.forEach(function (box) {
+	// 	tprint(box.name);
+	// })
+	return boxen;
+}
+
+boxen = addNewBoxen([]);
+targets = addNewTargets([]);
+
+while (true) {
+	// tprint("------Pre Sort-----")
+	// boxen.forEach(function (box) {
+	// 	tprint("---box---")
+	// 	tprint(box.name);
+	// 	tprint(box.freeRam);
+	// })
+	boxen = sortBoxen(boxen);
+	// tprint("------Post Sort-----")
+	// boxen.forEach(function (box) {
+	// 	tprint("---box---")
+	// 	tprint(box.name);
+	// 	tprint(box.freeRam);
+	// })
+	boxen = updateBoxen(boxen);
+
+	targets = sortTargets(targets);
+	targets = updateTargets(targets, boxen);
+
+	boxen = addNewBoxen(boxen);
+	targets = addNewTargets(targets);
+}

@@ -1,25 +1,13 @@
-import * as findCorps from "findCorps.script";
-import * as maintain from "maintain1.0.script";
+
 import * as config from "config.script";
+import * as lib from "library.script";
 
 while (true) {
-	targets = findCorps.findTargets();
-
-
-	if (!scriptRunning(config.payload(), "home")) {
-		maintain.maintain("home", .75);
-	}
+	targets = lib.findTargets();
 
 	targets.forEach(function (target) {
-		if (!scriptRunning(config.payload(), target)) {
-			maintain.maintain(target, 1);
-		}
-		if (!fileExists(config.pwned_list())) {
-			scp(config.pwned_list(), "home", target);
-		}
-		if (!fileExists(config.pwned_list())) {
-			scp(config.payload1(), "home", target)
+		if (!fileExists(config.payload1(), target)){
+			scp(config.payload1(), "home", target);
 		}
 	});
-
 }
